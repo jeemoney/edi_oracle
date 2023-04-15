@@ -72,3 +72,9 @@ def get_record(ref: abi.StaticBytes[32], doc_type: abi.Uint8, *, output: EDIDocu
             Concat(ref, Itob(doc_type))),
         edi_oracle_app.state.edi_records[doc_key.load()].store_into(output),
     )
+
+
+if __name__ == "__main__":
+    app = edi_oracle_app.build()
+    app.export()
+    json.dumps(app.contract.dictify())
