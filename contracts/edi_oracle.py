@@ -55,8 +55,20 @@ def add_record(doc_type: abi.Uint8, ref: abi.StaticBytes[32], status: abi.Uint8,
     return Seq(
         Assert(edi_oracle_app.state.setup_complete.load()
                == Int(1), comment="Setup must be complete"),
-        (doc_key := ScratchVar(type=abi.String)).store(Concat(ref, doc_type)),
+        (doc_key := ScratchVar(type=abi.StaticBytes[32])).store(
+            Concat(ref, Itob(doc_type))),
         (edi_record := EDIDocument()).set(doc_type=doc_type, ref=ref,
                                           status=status, item_code=item_code, item_qty=item_qty),
         edi_oracle_app.state.edi_records[doc_key.load()].set(edi_record),
+    )
+
+
+@edi_oracle_app.external(read_only=True)
+def get_record(ref: abi.StaticBytes[32], doc_type: abi.Uint8, *, output: EDIDocument):
+    return Seq(
+        Assert(edi_oracle_app.state.setup_complete.load()
+               == Int(1), comment="Setup must be complete"),
+        (doc_key := ScratchVar(type=abi.StaticBytes[32])).store(
+            Concat(ref, Itob(doc_type))),
+        edi_oracle_app.state.edi_records[doc_key.load()].store_into(output),
     )
