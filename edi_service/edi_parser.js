@@ -1,11 +1,8 @@
 const { X12Parser } = require("node-x12");
 const fs = require("fs");
+const { Algodv2 } = require("algosdk");
 
 const ediParser = (fileName) => {
-  if (fileName == null) {
-    fileName = "/test_files/850_04222023.edi";
-  }
-
   const parser = new X12Parser(true);
   let interchange;
   // eslint-disable-next-line no-undef
@@ -32,12 +29,16 @@ const ediToJSON = (interchange) => {
     price: "PO104",
   };
 
+  let transactions = [];
+
   interchange.functionalGroups.forEach((group) => {
     group.transactions.forEach((transaction) => {
       // There should only be one transaction
-      return transaction.toObject(map);
+      transactions.push(transaction.toObject(map));
     });
   });
+
+  return transactions[0];
 
   // const engine = new X12QueryEngine();
 
@@ -55,7 +56,24 @@ const ediToJSON = (interchange) => {
   //   // console.log(result.value); //OR result.values
   // });
 };
+
+const sendToOracle = async () => {
+  const client = new Algodv2(
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "http://localhost",
+    "4001"
+  );
+
+  const acctInfo = await client
+    .accountInformation(
+      "M4KUGHBNYWUD7PAVBJBSURI3OMUL6PPOGJREJRLU7QBDSRLUZUMOVSKQLU"
+    )
+    .do();
+  console.log(`Account balance: ${acctInfo.amount} microAlgos`);
+};
+
 module.exports = {
   ediParser,
   ediToJSON,
+  sendToOracle,
 };
