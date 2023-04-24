@@ -3,7 +3,39 @@ frameworkVersion: '3'
 
 provider:
   name: aws
+  region: us-west-2
   runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+
+  s3:
+    edi-bucket:
+      name: edi-bucket-${self:custom.edi-bucket-key}-${self:provider.stage}
+      tags:
+        - Key: stage 
+          Value: ${self:provider.stage}
+        - Key: service 
+          Value: ${self:service}
+      versioningConfiguration:
+        Status: Enabled
+
+  # ecr:
+  #   scanOnPush: true
+  #   # Definitions of images that later can be referenced by key in `function.image`
+  #   images:
+  #     baseimage:
+  #       # URI of an existing Docker image in ECR
+  #       uri: 000000000000.dkr.ecr.us-east-1.amazonaws.com/test-image@sha256:6bb600b4d6e1d7cf521097177d111111ea373edb91984a505333be8ac9455d38
+  #       # Path to the Docker context that will be used when building that image locally (default: '.')
+  #       path: ./image/
+  #       # Dockerfile that will be used when building the image locally (default: 'Dockerfile')
+  #       file: Dockerfile.dev
+  #       buildArgs:
+  #         STAGE: ${sls:stage}
+  #       cacheFrom:
+  #         - my-image:latest
+
+custom:
+  edi-bucket-key: ${param:bucketSuffix, '1234567890'}
 
 constructs:
   jobs:
@@ -15,11 +47,17 @@ functions:
   producer:
     handler: index.producer
     events:
-      - httpApi:
-          method: post
-          path: /produce
+      - s3:
+          bucket: ${self:provider.s3.edi-bucket.name}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: incoming/
+            - suffix: .edi
+
     environment:
       QUEUE_URL: ${construct:jobs.queueUrl}
+      
+
 
 plugins:
   - serverless-lift
