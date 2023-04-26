@@ -1,4 +1,4 @@
-const { X12Parser } = require("node-x12");
+const { X12Parser, X12QueryEngine } = require("node-x12");
 const fs = require("fs");
 const {
   Algodv2,
@@ -7,32 +7,49 @@ const {
 } = require("algosdk");
 const algoKitUtili = require("@algorandfoundation/algokit-utils");
 
-const ediParser = (fileName) => {
-  const parser = new X12Parser(true);
-  let interchange;
-  // eslint-disable-next-line no-undef
-  const sourcePath = __dirname + fileName;
-  let edi = fs.readFileSync(sourcePath).toString(); //.split("\n");
-  interchange = parser.parse(edi);
-  return interchange;
-};
-
 const ediToJSON = (interchange) => {
+  // get doc type for mapping
+  const engine = new X12QueryEngine();
+  const results = engine.query(interchange, "ST01");
+
   // Map transaction sets to javascript objects
-  const map = {
-    // status: "GS01",
-    poNumber: "BEG03",
-    poDate: "BEG05",
-    shipto_name: 'N102:N101["ST"]',
-    shipto_address: 'N1-N301:N101["ST"]',
-    shipto_city: 'N1-N401:N101["ST"]',
-    shipto_state: 'N1-N402:N101["ST"]',
-    shipto_zip: 'N1-N403:N101["ST"]',
-    itemName: "PID05",
-    quantity: "PO102",
-    itemCode: "PO111",
-    price: "PO104",
-  };
+  let map = {};
+  switch (results[0].value) {
+    case "850":
+      map = {
+        docType: "ST01",
+        // status: "GS01",
+        poNumber: "BEG03",
+        poDate: "BEG05",
+        shipto_name: 'N102:N101["ST"]',
+        shipto_address: 'N1-N301:N101["ST"]',
+        shipto_city: 'N1-N401:N101["ST"]',
+        shipto_state: 'N1-N402:N101["ST"]',
+        shipto_zip: 'N1-N403:N101["ST"]',
+        itemName: "PID05",
+        quantity: "PO102",
+        itemCode: "PO111",
+        price: "PO104",
+      };
+      break;
+    case "857":
+      console.log(interchange);
+      map = {
+        docType: "ST01",
+        // status: "GS01",
+        poNumber: "BHT03",
+        poDate: "BHT04",
+        shipto_name: 'N102:N101["ST"]',
+        itemName: "PID05",
+        quantity: "IT102",
+        itemCode: "IT107",
+        price: "IT104",
+      };
+      break;
+
+    default:
+      break;
+  }
 
   let transactions = [];
 
@@ -44,37 +61,16 @@ const ediToJSON = (interchange) => {
   });
 
   return transactions[0];
-
-  // const engine = new X12QueryEngine();
-
-  // .query for test
-  // // const results = engine.query(interchange, "PID05");
-
-  // results.forEach((result) => {
-  //   // Do something with each result.
-  //   console.log(result.value);
-  //   // console.log(result.interchange);
-  //   // console.log(result.functionalGroup);
-  //   // console.log(result.transaction);
-  //   // console.log(result.segment);
-  //   // console.log(result.element);
-  //   // console.log(result.value); //OR result.values
-  // });
 };
 
-const sendToOracle = async (poDetails) => {
-  await _addEdiRecord(86, "key", 850, "ref", poDetails.itemCode, 120, 1);
-};
-
-const _addEdiRecord = async (
-  appId,
-  key,
-  docType,
-  ref,
-  itemCode,
-  itemQty,
-  status
-) => {
+const addEdiRecordToOracle = async (poDetails) => {
+  const appId = 94;
+  const key = poDetails.docType + poDetails.poNumber;
+  const docType = parseInt(poDetails.docType);
+  const ref = poDetails.poNumber;
+  const itemCode = poDetails.itemCode;
+  const itemQty = parseInt(poDetails.quantity);
+  const status = 1;
   // const sender = algosdk.mnemonicToSecretKey(
   //   "ignore elegant horror stamp bronze tooth wrestle category modify absent dish remember will stand include system antenna team aspect baby scissors object winter above educate"
   // );
@@ -114,7 +110,7 @@ const _addEdiRecord = async (
       //const num = new Int32Array([value]).buffer;
       appArgs.push(value);
     } else {
-      appArgs.push(stringToArray(value));
+      appArgs.push(_stringToArray(value));
     }
   });
 
@@ -122,7 +118,7 @@ const _addEdiRecord = async (
 
   const txnSigner = algosdk.makeBasicAccountTransactionSigner(sender);
 
-  const boxes = [{ appIndex: appId, name: stringToArray(key32) }];
+  const boxes = [{ appIndex: appId, name: _stringToArray(key32) }];
 
   atc.addMethodCall({
     appID: appId,
@@ -136,8 +132,10 @@ const _addEdiRecord = async (
   });
   const result = await atc.execute(client, 4);
   for (const mr of result.methodResults) {
-    console.log(`${mr.returnValue}`);
+    console.log(`${mr.txID}`);
   }
+
+  result.methodResults[0].txID;
 };
 
 const _bufferStrToFixed = (string, length = 32) => {
@@ -148,7 +146,7 @@ const _bufferStrToFixed = (string, length = 32) => {
   return `${string}-${buffer}`;
 };
 
-function stringToArray(bufferString) {
+function _stringToArray(bufferString) {
   let uint8Array = new TextEncoder("utf-8").encode(bufferString);
   return uint8Array;
 }
@@ -205,8 +203,27 @@ function stringToArray(bufferString) {
 //   });
 // }
 
+const ediToOracle = async (data) => {
+  const parser = new X12Parser(true);
+  const interchange = parser.parse(data);
+  let poJson = ediToJSON(interchange);
+  await addEdiRecordToOracle(poJson);
+};
+
+// ** FOR LOCAL TESTING ONLY **
+const ediParser = (fileName) => {
+  const parser = new X12Parser(true);
+  let interchange;
+  // eslint-disable-next-line no-undef
+  const sourcePath = __dirname + fileName;
+  let edi = fs.readFileSync(sourcePath).toString();
+  interchange = parser.parse(edi);
+  return interchange;
+};
+
 module.exports = {
   ediParser,
   ediToJSON,
-  sendToOracle,
+  addEdiRecordToOracle,
+  ediToOracle,
 };
