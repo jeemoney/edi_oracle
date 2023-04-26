@@ -2,22 +2,13 @@ const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
 const sqs = new SQSClient();
 
 const producer = async (event) => {
-  let statusCode = 200;
-  let message;
-
-  if (!event.body) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        message: "No body was found",
-      }),
-    };
-  }
+  let file_key = event.object.key
+  let message = "";
 
   try {
     await sqs.send(new SendMessageCommand({
       QueueUrl: process.env.QUEUE_URL,
-      MessageBody: event.body,
+      MessageBody: file_key,
       MessageAttributes: {
         AttributeName: {
           StringValue: "Attribute Value",
@@ -34,7 +25,6 @@ const producer = async (event) => {
   }
 
   return {
-    statusCode,
     body: JSON.stringify({
       message,
     }),
