@@ -7,6 +7,30 @@ provider:
   runtime: nodejs18.x
   stage: ${opt:stage, 'dev'}
 
+  iam:
+    role:
+      # Add statements to the IAM role to give S3 permissions to Lambda functions
+      statements:
+        - Effect: Allow
+          Action:
+            - 's3:ListBucket'
+          Resource: 
+            Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.s3.edi-bucket.name}
+        - Effect: Allow
+          Action:
+            - 's3:GetObject'
+            - 's3:PutObject'
+            - 's3:DeleteObject'
+          Resource: 
+            Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - ${self:provider.s3.edi-bucket.name}
+                - '/*'
+
   s3:
     edi-bucket:
       name: edi-bucket-${self:custom.edi-bucket-key}-${self:provider.stage}
@@ -23,8 +47,6 @@ provider:
   #   # Definitions of images that later can be referenced by key in `function.image`
   #   images:
   #     baseimage:
-  #       # URI of an existing Docker image in ECR
-  #       uri: 000000000000.dkr.ecr.us-east-1.amazonaws.com/test-image@sha256:6bb600b4d6e1d7cf521097177d111111ea373edb91984a505333be8ac9455d38
   #       # Path to the Docker context that will be used when building that image locally (default: '.')
   #       path: ./image/
   #       # Dockerfile that will be used when building the image locally (default: 'Dockerfile')
@@ -40,18 +62,31 @@ custom:
 constructs:
   jobs:
     type: queue
+    fifo: true
+    alarm: grant@valltech.io
     worker:
       handler: index.consumer
+      vpc:
+        securityGroupIds:
+          - sg-0328a420ec3e0e4cb
+        subnetIds:
+          - subnet-0b358670a8d42801c
+          - subnet-0a61fa5d6f7366e0f
 
 functions:
   producer:
     handler: index.producer
+    vpc:
+      securityGroupIds:
+        - sg-0328a420ec3e0e4cb
+      subnetIds:
+        - subnet-0b358670a8d42801c
+        - subnet-0a61fa5d6f7366e0f
     events:
       - s3:
           bucket: ${self:provider.s3.edi-bucket.name}
           event: s3:ObjectCreated:*
           rules:
-            - prefix: incoming/
             - suffix: .edi
 
     environment:
