@@ -1,0 +1,42 @@
+{
+  "broker2": {
+    "type": "broker",
+    "address": "TIKCSOEU2UXXLK62N4YWAM6TRGWLW7VNTSQVDI4H5EXXC4B6F4TUHTI2GQ",
+    "private_key": "lUFrUA7W8J8bkcQ9aQiyD2CvB9QnCBRrFDdJnIWL8beaFCk4lNUvdavabzFgM9OJrLt+rZyhUaOH6S9xcD4vJw=="
+  },
+  "seller1": {
+    "type": "seller",
+    "address": "MYQEQRLIX7YLTEFQLVY4TNEFBX5PYXIG7KDMYIHQKBLJ4ZWIUCJEMNFCKE",
+    "private_key": "5YfcShBmW4+s+RXboI0lZyVpWVlQXP0Z7d9WiC1EmwdmIEhFaL/wuZCwXXHJtIUN+vxdBvqGzCDwUFaeZsigkg=="
+  },
+  "seller2": {
+    "type": "seller",
+    "address": "GL7FVS4HD7MWZMQD5LAZ6Y23LCDJ65YZYNTQ5UMUUQF5KLNWFBFNPLOX24",
+    "private_key": "5LccNZJ+En3lPBciuYpuiJ1Qn9mMlyKK4Gls4mWNuCwy/lrLhx/ZbLID6sGfY1tYhp93GcNnDtGUpAvVLbYoSg=="
+  },
+  "": {
+    "type": "seller",
+    "address": "DDLQNMH63FQXNOX3C56FNTP6VLU3YITOOPJ3LCCXVELPZBZXHKSW2XSDTY",
+    "private_key": "od+iXClPG3ZO2gHta3q9DD4uTi8H2Db8Td1x8OHkeEsY1waw/tlhdrr7F3xWzf6q6bwibnPTtYhXqRb8hzc6pQ=="
+  },
+  "buyer1": {
+    "type": "buyer",
+    "address": "RAECZVZ5TUI2ZC2WEP6TR5S7SZ3XRIABXPM5WC6MMXFKG73COLLXNIVH4I",
+    "private_key": "ssCswLarP+tyNAL4z05s1O3YxDBnHm9PXJmtXyohP8GICCzXPZ0RrItWI/049l+Wd3igAbvZ2wvMZcqjf2Jy1w=="
+  },
+  "buyer2": {
+    "type": "buyer",
+    "address": "LH56DGWHZWL2VXHQ5IZIBTSPYF6YGZ3KVIMQZAEUELXEOWSGR75IPOK6L4",
+    "private_key": "czspRBuAxLRxyv8U08M1a2EVfQMOUxzJ9z0NUySg069Z++Gax82Xqtzw6jKAzk/BfYNnaqoZDICUIu5HWkaP+g=="
+  },
+  "buyer3": {
+    "type": "buyer",
+    "address": "AXA7SHADIO7JK2HOFJZWJF7Y6CXUZLBNBVVDJV4QVEQ2IBDWSKTM7HEDHM",
+    "private_key": "84KIS+mi8vDDIA30U175W8CciJvrQp0kjWWzEtaqtacFwfkcA0O+lWjuKnNkl/jwr0ysLQ1qNNeQqSGkBHaSpg=="
+  },
+  "buyer4": {
+    "type": "buyer",
+    "address": "EWQW4BHWGHW2T6VDWPWZZ5OE3U3CMPGFOYFXLGRGY6242MYNQGSLBOGTYM",
+    "private_key": "o+t/qMQTkV8UR0SlNfz6+CMhbSKZiiY95D8GcPQd4u8loW4E9jHtqfqjs+2c9cTdNiY8xXYLdZomx7XNMw2BpA=="
+  }
+}
