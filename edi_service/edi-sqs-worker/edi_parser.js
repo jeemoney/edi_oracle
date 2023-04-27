@@ -63,8 +63,8 @@ const ediToJSON = (interchange) => {
   return transactions[0];
 };
 
-const addEdiRecordToOracle = async (poDetails) => {
-  const appId = 94;
+const addEdiRecordToOracle = async (appId,poDetails) => {
+  const appId = appId;
   const key = poDetails.docType + poDetails.poNumber;
   const docType = parseInt(poDetails.docType);
   const ref = poDetails.poNumber;
@@ -72,7 +72,7 @@ const addEdiRecordToOracle = async (poDetails) => {
   const itemQty = parseInt(poDetails.quantity);
   const status = 1;
   // const sender = algosdk.mnemonicToSecretKey(
-  //   "ignore elegant horror stamp bronze tooth wrestle category modify absent dish remember will stand include system antenna team aspect baby scissors object winter above educate"
+  //   "fuel blood urban uphold legend below cotton gaze galaxy goat system attend jealous impose sugar purpose reward outdoor logic lumber false place credit absorb jar"
   // );
   const client = new Algodv2(
     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -80,7 +80,7 @@ const addEdiRecordToOracle = async (poDetails) => {
     "4001"
   );
   let sender = await algoKitUtili.getAccount(
-    "brokertest1", //"PKS2W3G3MAEBFKODPGCI7I4UWGD3MOVR52MVJYRI2JT646ATT6BU6Q7FHU",
+    "brokertest1", //"VUMX2B4LFCBRVVJXU3VB43TQOVXIAPR2WQSA3KHKBR65ZVGHPFLTYUCXMM",
     client
   );
 
@@ -89,7 +89,7 @@ const addEdiRecordToOracle = async (poDetails) => {
   let ref32 = _bufferStrToFixed(ref);
   let itemCode32 = _bufferStrToFixed(itemCode);
 
-  const appSpec = require("../contracts/artifacts/application.json");
+  const appSpec = require("../../contracts/artifacts/application.json");
   const contract = new algosdk.ABIContract(appSpec.contract);
   const suggestedParams = await client.getTransactionParams().do();
 
@@ -208,6 +208,7 @@ const ediToOracle = async (data) => {
   const interchange = parser.parse(data);
   let poJson = ediToJSON(interchange);
   await addEdiRecordToOracle(poJson);
+  return poJson;
 };
 
 // ** FOR LOCAL TESTING ONLY **

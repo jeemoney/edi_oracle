@@ -4,6 +4,12 @@
   "description": "Serverless Framework Node SQS Producer-Consumer on AWS",
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^1.0.0",
+    "algokit": "^0.0.1",
+    "algosdk": "^2.2.0",
+    "node-x12": "^1.7.1"
+  },
   "devDependencies": {
     "serverless-lift": "^1.25.1"
   }
