@@ -149,6 +149,7 @@ def get_record(key: abi.StaticBytes[L[32]], *, output: EDIDocument) -> Expr:
 def build_contract():
     app = edi_oracle_app.build()
     app.export("./artifacts")
+    app.export("../edi_service/artifacts")
     return "Application: {} built".format(app.contract.name)
 
 

@@ -66,6 +66,15 @@ constructs:
     alarm: grant@valltech.io
     worker:
       handler: index.consumer
+      environment:
+        TEST_ALGOD_URL: https://testnet-api.algonode.cloud
+        TEST_ALGOD_PORT: ""
+        TEST_ALGOD_TOKEN: ""
+        TEST_INDEXER_URL: https://testnet-idx.algonode.cloud
+        TEST_INDEXER_PORT: ""
+        TEST_INDEXER_TOKEN: ""
+        TEST_ORACLE_ID: 206191370
+
       vpc:
         securityGroupIds:
           - sg-0328a420ec3e0e4cb
@@ -91,6 +100,8 @@ functions:
 
     environment:
       QUEUE_URL: ${construct:jobs.queueUrl}
+    
+
       
 
 

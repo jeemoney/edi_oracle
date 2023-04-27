@@ -8,6 +8,7 @@ const {
 const algoKitUtili = require("@algorandfoundation/algokit-utils");
 
 const ediToJSON = (interchange) => {
+  console.log("Interchange: ", interchange);
   // get doc type for mapping
   const engine = new X12QueryEngine();
   const results = engine.query(interchange, "ST01");
@@ -63,33 +64,38 @@ const ediToJSON = (interchange) => {
   return transactions[0];
 };
 
-const addEdiRecordToOracle = async (appId,poDetails) => {
-  const appId = appId;
+const addEdiRecordToOracle = async (poDetails) => {
+  const appId = process.env.TEST_ORACLE_ID
   const key = poDetails.docType + poDetails.poNumber;
   const docType = parseInt(poDetails.docType);
   const ref = poDetails.poNumber;
   const itemCode = poDetails.itemCode;
   const itemQty = parseInt(poDetails.quantity);
   const status = 1;
-  // const sender = algosdk.mnemonicToSecretKey(
-  //   "fuel blood urban uphold legend below cotton gaze galaxy goat system attend jealous impose sugar purpose reward outdoor logic lumber false place credit absorb jar"
-  // );
+  const sender = algosdk.mnemonicToSecretKey(
+    "fuel blood urban uphold legend below cotton gaze galaxy goat system attend jealous impose sugar purpose reward outdoor logic lumber false place credit absorb jar"
+  );
+
+  const token = process.env.TEST_ALGOD_TOKEN ?? "";
+  const server = process.env.TEST_ALGOD_SERVER;
+  const port = process.env.TEST_ALGOD_PORT;
+  console.log(`server: ${server} port: ${port} token: ${token}`);
   const client = new Algodv2(
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "http://localhost",
-    "4001"
+    token,
+    server,
+    port
   );
-  let sender = await algoKitUtili.getAccount(
-    "brokertest1", //"VUMX2B4LFCBRVVJXU3VB43TQOVXIAPR2WQSA3KHKBR65ZVGHPFLTYUCXMM",
-    client
-  );
+  // let sender = await algoKitUtili.getAccount(
+  //   "brokertest1", //"VUMX2B4LFCBRVVJXU3VB43TQOVXIAPR2WQSA3KHKBR65ZVGHPFLTYUCXMM",
+  //   client
+  // );
 
   let key32 = _bufferStrToFixed(key);
   console.log(`key_32: ${key32} with len ${key32.length}`);
   let ref32 = _bufferStrToFixed(ref);
   let itemCode32 = _bufferStrToFixed(itemCode);
 
-  const appSpec = require("../../contracts/artifacts/application.json");
+  const appSpec = require("./artifacts/application.json");
   const contract = new algosdk.ABIContract(appSpec.contract);
   const suggestedParams = await client.getTransactionParams().do();
 
@@ -207,6 +213,7 @@ const ediToOracle = async (data) => {
   const parser = new X12Parser(true);
   const interchange = parser.parse(data);
   let poJson = ediToJSON(interchange);
+  console.log(`poJson: ${JSON.stringify(poJson)}`);
   await addEdiRecordToOracle(poJson);
   return poJson;
 };

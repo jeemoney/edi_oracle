@@ -1,5 +1,5 @@
 "use strict";
-const { ediParser, ediToJSON, addEdiRecordToOracle } = require("./edi_parser");
+const { ediParser, ediToJSON, addEdiRecordToOracle } = require("../edi_parser");
 require("dotenv").config();
 
 const fileName = "/test_files/850_04222023.edi";
