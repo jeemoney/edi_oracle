@@ -27,28 +27,28 @@ const ediToJSON = (interchange) => {
   return trans[0];
 };
 
-const addEdiRecordToOracle = async (poDetails) => {
+const addEdiRecordToOracle = async (data) => {
   const appId = 94;
 
   let key, docType, ref, itemCode, itemQty, status;
 
   // temporary assigments
-  key = poDetails.DocType + poDetails.PONumber;
-  docType = parseInt(poDetails.DocType);
-  ref = poDetails.PONumber;
-  itemCode = poDetails.ItemNumber;
+  key = data.DocType + data.PONumber;
+  docType = parseInt(data.DocType);
+  ref = data.PONumber;
+  itemCode = data.ItemNumber;
 
-  switch (poDetails.DocType) {
+  switch (data.DocType) {
     case "856":
-      itemQty = parseInt(poDetails.ShippedQty);
+      itemQty = parseInt(data.ShippedQty);
       status = 2;
       break;
     case "850":
-      itemQty = parseInt(poDetails.Quantity);
+      itemQty = parseInt(data.Quantity);
       status = 1;
       break;
     case "810":
-      itemQty = parseInt(poDetails.InvoiceQty);
+      itemQty = parseInt(data.InvoiceQty);
       status = 0;
       break;
 
