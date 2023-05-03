@@ -64,8 +64,8 @@ const ediToJSON = (interchange) => {
   return transactions[0];
 };
 
-const addEdiRecordToOracle = async (poDetails) => {
-  const appId = process.env.TEST_ORACLE_ID
+const addEdiRecordToOracle = async (poDetails, accountSecret) => {
+  const appId = parseInt(process.env.ORACLE_ID);
   const key = poDetails.docType + poDetails.poNumber;
   const docType = parseInt(poDetails.docType);
   const ref = poDetails.poNumber;
@@ -73,12 +73,12 @@ const addEdiRecordToOracle = async (poDetails) => {
   const itemQty = parseInt(poDetails.quantity);
   const status = 1;
   const sender = algosdk.mnemonicToSecretKey(
-    "fuel blood urban uphold legend below cotton gaze galaxy goat system attend jealous impose sugar purpose reward outdoor logic lumber false place credit absorb jar"
+    accountSecret.accountMnemonic
   );
 
-  const token = process.env.TEST_ALGOD_TOKEN ?? "";
-  const server = process.env.TEST_ALGOD_SERVER;
-  const port = process.env.TEST_ALGOD_PORT;
+  const token = process.env.ALGOD_TOKEN;
+  const server = process.env.ALGOD_URL;
+  const port = process.env.ALGOD_PORT;
   console.log(`server: ${server} port: ${port} token: ${token}`);
   const client = new Algodv2(
     token,
@@ -141,7 +141,7 @@ const addEdiRecordToOracle = async (poDetails) => {
     console.log(`${mr.txID}`);
   }
 
-  result.methodResults[0].txID;
+  return result.methodResults[0].txID;
 };
 
 const _bufferStrToFixed = (string, length = 32) => {
@@ -209,13 +209,13 @@ function _stringToArray(bufferString) {
 //   });
 // }
 
-const ediToOracle = async (data) => {
+const ediToOracle = async (data, accountSecret) => {
   const parser = new X12Parser(true);
   const interchange = parser.parse(data);
   let poJson = ediToJSON(interchange);
   console.log(`poJson: ${JSON.stringify(poJson)}`);
-  await addEdiRecordToOracle(poJson);
-  return poJson;
+  const response = await addEdiRecordToOracle(poJson, accountSecret);
+  return response;
 };
 
 // ** FOR LOCAL TESTING ONLY **

@@ -42,68 +42,32 @@ provider:
       versioningConfiguration:
         Status: Enabled
 
-  # ecr:
-  #   scanOnPush: true
-  #   # Definitions of images that later can be referenced by key in `function.image`
-  #   images:
-  #     baseimage:
-  #       # Path to the Docker context that will be used when building that image locally (default: '.')
-  #       path: ./image/
-  #       # Dockerfile that will be used when building the image locally (default: 'Dockerfile')
-  #       file: Dockerfile.dev
-  #       buildArgs:
-  #         STAGE: ${sls:stage}
-  #       cacheFrom:
-  #         - my-image:latest
-
 custom:
-  edi-bucket-key: ${param:bucketSuffix, '1234567890'}
+  edi-bucket-key: ${file(./config.js):bucketPrefix}
 
 constructs:
   jobs:
     type: queue
     fifo: true
-    alarm: grant@valltech.io
+    alarm: ${file(./config.js):alarmEmail}
     worker:
       handler: index.consumer
-      environment:
-        TEST_ALGOD_URL: https://testnet-api.algonode.cloud
-        TEST_ALGOD_PORT: ""
-        TEST_ALGOD_TOKEN: ""
-        TEST_INDEXER_URL: https://testnet-idx.algonode.cloud
-        TEST_INDEXER_PORT: ""
-        TEST_INDEXER_TOKEN: ""
-        TEST_ORACLE_ID: 206191370
-
-      vpc:
-        securityGroupIds:
-          - sg-0328a420ec3e0e4cb
-        subnetIds:
-          - subnet-0b358670a8d42801c
-          - subnet-0a61fa5d6f7366e0f
+      timeout: 600
+      environment: ${file(./config.js):environment}
+        
 
 functions:
   producer:
     handler: index.producer
-    vpc:
-      securityGroupIds:
-        - sg-0328a420ec3e0e4cb
-      subnetIds:
-        - subnet-0b358670a8d42801c
-        - subnet-0a61fa5d6f7366e0f
     events:
       - s3:
           bucket: ${self:provider.s3.edi-bucket.name}
           event: s3:ObjectCreated:*
           rules:
             - suffix: .edi
-
+            - prefix: ${file(./config.js):incomingBucketPrefix}
     environment:
       QUEUE_URL: ${construct:jobs.queueUrl}
-    
-
-      
-
 
 plugins:
   - serverless-lift
