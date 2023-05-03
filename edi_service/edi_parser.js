@@ -13,65 +13,52 @@ const ediToJSON = (interchange) => {
   const engine = new X12QueryEngine();
   const results = engine.query(interchange, "ST01");
 
-  // Map transaction sets to javascript objects
-  let map = {};
-  switch (results[0].value) {
-    case "850":
-      map = {
-        docType: "ST01",
-        // status: "GS01",
-        poNumber: "BEG03",
-        poDate: "BEG05",
-        shipto_name: 'N102:N101["ST"]',
-        shipto_address: 'N1-N301:N101["ST"]',
-        shipto_city: 'N1-N401:N101["ST"]',
-        shipto_state: 'N1-N402:N101["ST"]',
-        shipto_zip: 'N1-N403:N101["ST"]',
-        itemName: "PID05",
-        quantity: "PO102",
-        itemCode: "PO111",
-        price: "PO104",
-      };
-      break;
-    case "857":
-      console.log(interchange);
-      map = {
-        docType: "ST01",
-        // status: "GS01",
-        poNumber: "BHT03",
-        poDate: "BHT04",
-        shipto_name: 'N102:N101["ST"]',
-        itemName: "PID05",
-        quantity: "IT102",
-        itemCode: "IT107",
-        price: "IT104",
-      };
-      break;
+  const { ediMap } = require("../edi_service/edi_mapper");
+  const mapped = ediMap(results[0].value);
 
-    default:
-      break;
-  }
-
-  let transactions = [];
+  let trans = [];
 
   interchange.functionalGroups.forEach((group) => {
     group.transactions.forEach((transaction) => {
       // There should only be one transaction
-      transactions.push(transaction.toObject(map));
+      trans.push(transaction.toObject(mapped));
     });
   });
 
-  return transactions[0];
+  return trans[0];
 };
 
-const addEdiRecordToOracle = async (poDetails, accountSecret) => {
+const addEdiRecordToOracle = async (data, accountSecret) => {
   const appId = parseInt(process.env.ORACLE_ID);
-  const key = poDetails.docType + poDetails.poNumber;
-  const docType = parseInt(poDetails.docType);
-  const ref = poDetails.poNumber;
-  const itemCode = poDetails.itemCode;
-  const itemQty = parseInt(poDetails.quantity);
-  const status = 1;
+
+  let key, docType, ref, itemCode, itemQty, status;
+
+  // temporary assigments
+  key = data.DocType + data.PONumber;
+  docType = parseInt(data.DocType);
+  ref = data.PONumber;
+  itemCode = data.ItemNumber;
+
+  switch (data.DocType) {
+    case "856":
+      itemQty = parseInt(data.ShippedQty);
+      status = 2;
+      break;
+    case "850":
+      itemQty = parseInt(data.Quantity);
+      status = 1;
+      break;
+    case "810":
+      itemQty = parseInt(data.InvoiceQty);
+      status = 0;
+      break;
+
+    default:
+      itemQty = 0;
+      status = -1;
+      break;
+  }
+
   const sender = algosdk.mnemonicToSecretKey(
     accountSecret.accountMnemonic
   );
@@ -113,7 +100,6 @@ const addEdiRecordToOracle = async (poDetails, accountSecret) => {
 
   argumentValues.forEach((value) => {
     if (typeof value === "number") {
-      //const num = new Int32Array([value]).buffer;
       appArgs.push(value);
     } else {
       appArgs.push(_stringToArray(value));
@@ -157,57 +143,7 @@ function _stringToArray(bufferString) {
   return uint8Array;
 }
 
-// function getLocalKmdClient() {
-//   const kmdToken = "a".repeat(64);
-//   const kmdServer = "http://localhost";
-//   const kmdPort = "4002";
-
-//   const kmdClient = new algosdk.Kmd(kmdToken, kmdServer, kmdPort);
-//   return kmdClient;
-// }
-
-// async function getLocalAccounts() {
-//   const kmdClient = getLocalKmdClient();
-
-//   const wallets = await kmdClient.listWallets();
-
-//   let walletId;
-//   // eslint-disable-next-line no-restricted-syntax
-//   for (const wallet of wallets.wallets) {
-//     if (wallet.name === "unencrypted-default-wallet") walletId = wallet.id;
-//   }
-
-//   if (walletId === undefined)
-//     throw Error("No wallet named: unencrypted-default-wallet");
-
-//   const handleResp = await kmdClient.initWalletHandle(walletId, "");
-//   const handle = handleResp.wallet_handle_token;
-
-//   const addresses = await kmdClient.listKeys(handle);
-//   // eslint-disable-next-line camelcase
-//   const acctPromises = [];
-
-//   // eslint-disable-next-line no-restricted-syntax
-//   for (const addr of addresses.addresses) {
-//     acctPromises.push(kmdClient.exportKey(handle, "", addr));
-//   }
-//   const keys = await Promise.all(acctPromises);
-
-//   // Don't need to wait for it
-//   kmdClient.releaseWalletHandle(handle);
-
-//   return keys.map((k) => {
-//     const addr = algosdk.encodeAddress(k.private_key.slice(32));
-//     const acct = { sk: k.private_key, addr };
-//     const signer = algosdk.makeBasicAccountTransactionSigner(acct);
-
-//     return {
-//       addr: acct.addr,
-//       privateKey: acct.sk,
-//       signer,
-//     };
-//   });
-// }
+/
 
 const ediToOracle = async (data, accountSecret) => {
   const parser = new X12Parser(true);
