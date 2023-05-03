@@ -1,0 +1,32 @@
+{
+    "test":{
+        "alarmEmail": "",
+        "bucketPrefix": "",
+        "incomingBucketPrefix":"",
+        "processedBucketPrefix":"",
+        "environment": {
+            "ALGOD_URL":"",
+            "ALGOD_TOKEN":"",
+            "ALGOD_PORT": "",
+            "INDEXER_URL":"",
+            "INDEXER_TOKEN":"",
+            "INDEXER_PORT": "",
+            "ORACLE_ID": ""
+        }
+    },
+    "prod":{
+        "alarmEmail": "",
+        "bucketPrefix": "",
+        "incomingBucketPrefix":"",
+        "processedBucketPrefix":"",
+        "environment": {
+            "ALGOD_URL":"",
+            "ALGOD_TOKEN":"",
+            "ALGOD_PORT": "",
+            "INDEXER_URL":"",
+            "INDEXER_TOKEN":"",
+            "INDEXER_PORT": "",
+            "ORACLE_ID": ""
+        }
+    }
+}

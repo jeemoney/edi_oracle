@@ -131,3 +131,5 @@ dmypy.json
 
 node_modules
 .serverless
+secrets.json
+sls-config.json
