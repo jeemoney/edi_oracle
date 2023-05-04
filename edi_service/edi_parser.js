@@ -59,19 +59,13 @@ const addEdiRecordToOracle = async (data, accountSecret) => {
       break;
   }
 
-  const sender = algosdk.mnemonicToSecretKey(
-    accountSecret.accountMnemonic
-  );
+  const sender = algosdk.mnemonicToSecretKey(accountSecret.accountMnemonic);
 
   const token = process.env.ALGOD_TOKEN;
   const server = process.env.ALGOD_URL;
   const port = process.env.ALGOD_PORT;
   console.log(`server: ${server} port: ${port} token: ${token}`);
-  const client = new Algodv2(
-    token,
-    server,
-    port
-  );
+  const client = new Algodv2(token, server, port);
   // let sender = await algoKitUtili.getAccount(
   //   "brokertest1", //"VUMX2B4LFCBRVVJXU3VB43TQOVXIAPR2WQSA3KHKBR65ZVGHPFLTYUCXMM",
   //   client
@@ -142,8 +136,6 @@ function _stringToArray(bufferString) {
   let uint8Array = new TextEncoder("utf-8").encode(bufferString);
   return uint8Array;
 }
-
-/
 
 const ediToOracle = async (data, accountSecret) => {
   const parser = new X12Parser(true);
