@@ -6,55 +6,64 @@
         "name": "Transaction Set Identifier Code",
         "segment": "ST01",
         "label": "Doc Type",
-        "include": true
+        "include": true,
+        "oracleField": "docType"
       },
       {
         "name": "Invoice Date",
         "segment": "BIG01",
         "label": "Invoice Date",
-        "include": true
+        "include": true,
+        "oracleField": "invoiceDate"
       },
       {
         "name": "Invoice Number",
         "segment": "BIG02",
         "label": "Invoice Number",
-        "include": false
+        "include": false,
+        "oracleField": "invoiceNumber"
       },
       {
         "name": "PO Date",
         "segment": "BIG03",
         "label": "Purchase Date",
-        "include": false
+        "include": false,
+        "oracleField": "purchaseDate"
       },
       {
         "name": "PO Number",
         "segment": "BIG04",
         "label": "PO Number",
-        "include": true
+        "include": true,
+        "oracleField": "purchNumber"
       },
       {
         "name": "Quantity Invoiced",
         "segment": "IT102",
         "label": "Invoice Qty",
-        "include": true
+        "include": true,
+        "oracleField": "invoiceQty"
       },
       {
         "name": "Unit Price",
         "segment": "IT104",
         "label": "Unit Price",
-        "include": true
+        "include": true,
+        "oracleField": "unitPrice"
       },
       {
         "name": "Buyers Item Number",
         "segment": "IT106",
         "label": "Item Number",
-        "include": false
+        "include": false,
+        "oracleField": "itemNumber"
       },
       {
         "name": "Buyers Item Description",
         "segment": "IT108",
         "label": "Item Name",
-        "include": true
+        "include": true,
+        "oracleField": "itemName"
       }
     ]
   },
@@ -65,123 +74,141 @@
         "name": "Transaction Set Identifier Code",
         "segment": "ST01",
         "label": "Doc Type",
-        "include": true
+        "include": true,
+        "oracleField": "docType"
       },
       {
         "name": "Transaction Set Control Number",
         "segment": "ST02",
         "label": "Set Number",
-        "include": false
+        "include": false,
+        "oracleField": "setNumber"
       },
       {
         "name": "Transaction Set Purpose Code",
         "segment": "BEG01",
         "label": "Purpose",
-        "include": false
+        "include": false,
+        "oracleField": "purpose"
       },
       {
         "name": "Purchase Order Type Code",
         "segment": "BEG02",
         "label": "PO Type",
-        "include": false
+        "include": false,
+        "oracleField": "purchType"
       },
       {
         "name": "Purchase Order Number",
         "segment": "BEG03",
         "label": "PO Number",
-        "include": true
+        "include": true,
+        "oracleField": "purchNumber"
       },
       {
         "name": "Date",
         "segment": "BEG05",
         "label": "PO Date",
-        "include": true
+        "include": true,
+        "oracleField": "purchDate"
       },
       {
         "name": "Contract Number",
         "segment": "BEG06",
         "label": "Contract ID",
-        "include": true
+        "include": true,
+        "oracleField": "contractID"
       },
       {
         "name": "Date Time Qualifier",
         "segment": "DTM01",
         "label": "DT Qualifier",
-        "include": false
+        "include": false,
+        "oracleField": "dateQualifier"
       },
       {
         "name": "Date",
         "segment": "DTM02",
         "label": "Required By Date",
-        "include": false
+        "include": false,
+        "oracleField": "requiredByDate"
       },
       {
         "name": "Ship to name",
         "segment": "N102",
         "label": "Vendor Name",
-        "include": false
+        "include": false,
+        "oracleField": "vendorName"
       },
       {
         "name": "Identification Code",
         "segment": "N104",
         "label": "Vendor Code",
-        "include": false
+        "include": false,
+        "oracleField": "vendorCode"
       },
       {
         "name": "Address Information",
         "segment": "N301",
         "label": "Address",
-        "include": false
+        "include": false,
+        "oracleField": "address"
       },
       {
         "name": "City name",
         "segment": "N401",
         "label": "City",
-        "include": false
+        "include": false,
+        "oracleField": "city"
       },
       {
         "name": "Ship to state",
         "segment": "N402",
         "label": "State",
-        "include": false
+        "include": false,
+        "oracleField": "state"
       },
       {
         "name": "Ship to zipcode",
         "segment": "N403",
         "label": "Zipcode",
-        "include": false
+        "include": false,
+        "oracleField": "zipcode"
       },
-
       {
         "name": "Assigned Identification",
         "segment": "PO101",
         "label": "Line Num",
-        "include": false
+        "include": false,
+        "oracleField": "lineNum"
       },
-
       {
         "name": "Quantity Ordered",
         "segment": "PO102",
         "label": "Quantity",
-        "include": true
+        "include": true,
+        "oracleField": "quantity"
       },
       {
         "name": "Unit Price",
         "segment": "PO104",
         "label": "Unit Price",
-        "include": true
+        "include": true,
+        "oracleField": "unitPrice"
       },
       {
         "name": "Vendor Item Number",
         "segment": "P0111",
         "label": "Item Number",
-        "include": true
+        "include": true,
+        "oracleField": "itemNumber"
       },
       {
         "name": "Item Description",
         "segment": "PID05",
         "label": "Item Name",
-        "include": true
+        "include": true,
+        "oracleField": "itemName"
       }
     ]
   },
@@ -192,86 +219,99 @@
         "name": "Transaction Set Identifier Code",
         "segment": "ST01",
         "label": "Doc Type",
-        "include": true
+        "include": true,
+        "oracleField": "docType"
       },
-
       {
         "name": "Shipment Number",
         "segment": "BSN02",
         "label": "Invoice Number",
-        "include": false
+        "include": false,
+        "oracleField": "invoiceNumber"
       },
       {
         "name": "Shipment Date",
         "segment": "BSN03",
         "label": "Shipment Date",
-        "include": true
+        "include": true,
+        "oracleField": "shipmentDate"
       },
       {
         "name": "Bill of Lading Number",
         "segment": "REF02",
         "label": "BOL",
-        "include": false
+        "include": false,
+        "oracleField": "billOfLading"
       },
       {
         "name": "PO Number",
         "segment": "PRF01",
         "label": "PO Number",
-        "include": true
+        "include": true,
+        "oracleField": "purchNumber"
       },
       {
         "name": "Number of Units Shipped",
         "segment": "SN102",
         "label": "Shipped Qty",
-        "include": true
+        "include": true,
+        "oracleField": "shippedQty"
       },
       {
         "name": "Product ID",
         "segment": "LIN03",
         "label": "Item Number",
-        "include": true
+        "include": true,
+        "oracleField": "itemNumber"
       },
       {
         "name": "Item Description",
         "segment": "PID05",
         "label": "Item Name",
-        "include": true
+        "include": true,
+        "oracleField": "itemName"
       },
       {
         "name": "Ship to name",
         "segment": "N102",
         "label": "Vendor Name",
-        "include": false
+        "include": false,
+        "oracleField": "vendorName"
       },
       {
         "name": "Identification Code",
         "segment": "N104",
         "label": "Vendor Code",
-        "include": false
+        "include": false,
+        "oracleField": "vendorCode"
       },
       {
         "name": "Address Information",
         "segment": "N301",
         "label": "Address",
-        "include": false
+        "include": false,
+        "oracleField": "address"
       },
       {
         "name": "City name",
         "segment": "N401",
         "label": "City",
-        "include": false
+        "include": false,
+        "oracleField": "city"
       },
       {
         "name": "Ship to state",
         "segment": "N402",
         "label": "State",
-        "include": false
+        "include": false,
+        "oracleField": "state"
       },
       {
         "name": "Ship to zipcode",
         "segment": "N403",
         "label": "Zipcode",
-        "include": false
+        "include": false,
+        "oracleField": "zipcode"
       }
     ]
   }
