@@ -6,7 +6,7 @@ const ediMap = (docType) => {
   const fieldMap = mappings[docType];
   fieldMap.fields.forEach((field) => {
     if (field.include) {
-      map[field.oracleField] = field.segment;
+      map[field.code] = field.segment;
     }
   });
 
