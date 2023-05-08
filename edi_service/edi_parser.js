@@ -7,86 +7,132 @@ const {
 } = require("algosdk");
 const algoKitUtili = require("@algorandfoundation/algokit-utils");
 
+// helper functions
+const _bufferStrToFixed = (string, length = 32) => {
+  if (string.length == length) {
+    return string.encode();
+  }
+  let buffer = "X".repeat(length - string.length - 1);
+  return `${string}-${buffer}`;
+};
+
+function _stringToArray(bufferString) {
+  let uint8Array = new TextEncoder("utf-8").encode(bufferString);
+  return uint8Array;
+}
+
+const _ediMap = (docType) => {
+  const mappings = require("./edi_mapping.json");
+  let map = {};
+  const fieldMap = mappings[docType];
+  fieldMap.fields.forEach((field) => {
+    if (field.include) {
+      map[field.code] = field.segment;
+    }
+  });
+
+  return map;
+};
+
+// get edi segments via node-x12
+const extractEDI = (data) => {
+  const parser = new X12Parser(true);
+
+  try {
+    const interchange = parser.parse(data);
+    return interchange;
+  } catch (error) {
+    throw `Failed to parse edi data: ${error.toString()}`;
+  }
+};
+
+// get fields according to config and map edi transaction
 const ediToJSON = (interchange) => {
-  console.log("Interchange: ", interchange);
   // get doc type for mapping
   const engine = new X12QueryEngine();
   const results = engine.query(interchange, "ST01");
+  const fieldMap = _ediMap(results[0].value);
 
-  const { ediMap } = require("../edi_service/edi_mapper");
-  const mapped = ediMap(results[0].value);
-
-  let trans = [];
+  let jsonTrans = [];
 
   interchange.functionalGroups.forEach((group) => {
     group.transactions.forEach((transaction) => {
       // There should only be one transaction
-      trans.push(transaction.toObject(mapped));
+      jsonTrans.push(transaction.toObject(fieldMap));
     });
   });
 
-  return trans[0];
+  return jsonTrans[0];
 };
 
-const addEdiRecordToOracle = async (data, accountSecret) => {
-  const appId = parseInt(process.env.ORACLE_ID);
-
-  let key, docType, ref, itemCode, itemQty, status;
+// get smart contract parameters from jsonData
+const getOracleParams = (jsonData) => {
+  let params = {
+    key: null,
+    docType: null,
+    ref: null,
+    itemCode: null,
+    itemQty: null,
+    status: null,
+  };
 
   // temporary assigments
-  key = data.DocType + data.PONumber;
-  docType = parseInt(data.DocType);
-  ref = data.PONumber;
-  itemCode = data.ItemNumber;
+  params.key = jsonData.docType + jsonData.purchNumber;
+  params.docType = parseInt(jsonData.docType);
+  params.ref = jsonData.purchNumber;
+  params.itemCode = jsonData.itemNumber;
 
-  switch (data.DocType) {
+  switch (jsonData.docType) {
     case "856":
-      itemQty = parseInt(data.ShippedQty);
-      status = 2;
+      params.itemQty = parseInt(jsonData.shippedQty);
+      params.status = 2;
       break;
     case "850":
-      itemQty = parseInt(data.Quantity);
-      status = 1;
+      params.itemQty = parseInt(jsonData.quantity);
+      params.status = 1;
       break;
     case "810":
-      itemQty = parseInt(data.InvoiceQty);
-      status = 0;
+      itemQty = parseInt(jsonData.invoiceQuantity);
+      params.status = 0;
       break;
 
     default:
-      itemQty = 0;
-      status = -1;
+      params.itemQty = 0;
+      params.status = -1;
       break;
   }
 
-  const sender = algosdk.mnemonicToSecretKey(accountSecret.accountMnemonic);
+  return params;
+};
 
+// create and send smart contract transaction call
+const sendToOracle = async (params, accountSecret) => {
+  // initialize client
   const token = process.env.ALGOD_TOKEN;
   const server = process.env.ALGOD_URL;
   const port = process.env.ALGOD_PORT;
   console.log(`server: ${server} port: ${port} token: ${token}`);
   const client = new Algodv2(token, server, port);
-  // let sender = await algoKitUtili.getAccount(
-  //   "brokertest1", //"VUMX2B4LFCBRVVJXU3VB43TQOVXIAPR2WQSA3KHKBR65ZVGHPFLTYUCXMM",
-  //   client
-  // );
 
-  let key32 = _bufferStrToFixed(key);
-  console.log(`key_32: ${key32} with len ${key32.length}`);
-  let ref32 = _bufferStrToFixed(ref);
-  let itemCode32 = _bufferStrToFixed(itemCode);
-
+  // get application specifications for sc call
   const appSpec = require("./artifacts/application.json");
   const contract = new algosdk.ABIContract(appSpec.contract);
-  const suggestedParams = await client.getTransactionParams().do();
+  const suggestedParams = await client.getTransactionParams();
+
+  // prepare arguments for sc call
+  const appId = parseInt(process.env.ORACLE_ID);
+  const sender = algosdk.mnemonicToSecretKey(accountSecret.accountMnemonic);
+  const key32 = _bufferStrToFixed(params.key);
+  const ref32 = _bufferStrToFixed(params.ref);
+  const itemCode32 = _bufferStrToFixed(params.itemCode);
 
   const appArguments = {
     key: key32,
-    doc_type: docType,
+    doc_type: params.docType,
     ref: ref32,
-    status: status,
+    status: params.status,
     item_code: itemCode32,
-    item_qty: itemQty,
+    item_qty: params.itemQty,
   };
 
   const argumentValues = Object.values(appArguments);
@@ -124,25 +170,17 @@ const addEdiRecordToOracle = async (data, accountSecret) => {
   return result.methodResults[0].txID;
 };
 
-const _bufferStrToFixed = (string, length = 32) => {
-  if (string.length == length) {
-    return string.encode();
-  }
-  let buffer = "X".repeat(length - string.length - 1);
-  return `${string}-${buffer}`;
-};
-
-function _stringToArray(bufferString) {
-  let uint8Array = new TextEncoder("utf-8").encode(bufferString);
-  return uint8Array;
-}
-
+// ETL sequence
 const ediToOracle = async (data, accountSecret) => {
-  const parser = new X12Parser(true);
-  const interchange = parser.parse(data);
-  let poJson = ediToJSON(interchange);
-  console.log(`poJson: ${JSON.stringify(poJson)}`);
-  const response = await addEdiRecordToOracle(poJson, accountSecret);
+  // get JSEN data from file data
+  const jsenData = extractEDI(data);
+
+  // map JSEN data to config
+  const jsonData = ediToJSON(jsenData);
+  console.log(`poJson: ${JSON.stringify(jsonData)}`);
+  // get params from data and send to oracle
+  const params = getOracleParams(jsonData);
+  const response = await sendToOracle(params, accountSecret);
   return response;
 };
 
@@ -160,6 +198,7 @@ const ediParser = (fileName) => {
 module.exports = {
   ediParser,
   ediToJSON,
-  addEdiRecordToOracle,
+  getOracleParams,
+  sendToOracle,
   ediToOracle,
 };
