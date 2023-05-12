@@ -21,6 +21,11 @@ from pyteal import (
     abi,
 )
 
+from smart_contracts.helpers.deployment_standard import (
+    deploy_time_immutability_control,
+    deploy_time_permanence_control,
+)
+
 CONTRACT_VERSION = "0.0.3"
 
 
@@ -58,10 +63,17 @@ class EDIOracleState:
             * max_documents
         )
 
+    def get_min_balance(self) -> int:
+        return self.min_balance.value
 
-edi_oracle_app = beaker.Application(
-    f"EDIOracle_v{CONTRACT_VERSION}",
-    state=EDIOracleState(max_documents=100, record_type=EDIDocument),
+
+edi_oracle_app = (
+    beaker.Application(
+        f"EDIOracle_v{CONTRACT_VERSION}",
+        state=EDIOracleState(max_documents=100, record_type=EDIDocument),
+    )
+    .apply(deploy_time_immutability_control)
+    .apply(deploy_time_permanence_control)
 )
 
 
