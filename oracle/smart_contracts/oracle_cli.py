@@ -1,17 +1,73 @@
-# take string passed in command line arg and convert to base32
-import sys
-
-sys.path.append("..")
 import argparse
-import utils
-import pyteal as pt
-import algosdk
-from algosdk.abi import ABIType
-from algosdk import atomic_transaction_composer as atc
-import algokit as ak
+import os
+from json import JSONEncoder
+from pathlib import Path
+
 import algokit_utils as aku
-from contracts import edi_oracle
-from contracts.edi_oracle import EDIDocument, edi_oracle_app
+from algosdk import atomic_transaction_composer as atc
+from algosdk.abi import ABIType
+
+from oracle.smart_contracts import edi_oracle
+from oracle.smart_contracts.edi_oracle import EDIDocument, edi_oracle_app
+
+os.environ["ALGOD_SERVER"] = "http://localhost"
+os.environ["ALGOD_PORT"] = "4001"
+os.environ[
+    "ALGOD_TOKEN"
+] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+os.environ["INDEXER_SERVER"] = "http://localhost"
+os.environ["INDEXER_PORT"] = "8980"
+os.environ[
+    "INDEXER_TOKEN"
+] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+
+def buffer_str_to_fixed(string: str, length: int = 32) -> bytes:
+    if len(string) == length:
+        return string.encode()
+    buffer = "X" * (length - len(string) - 1)
+    return f"{string}-{buffer}".encode()
+
+
+def create_app_client(app_id: int, creator: aku.Account) -> aku.ApplicationClient:
+    return aku.ApplicationClient(
+        aku.get_algod_client(),
+        Path("./artifacts/application.json"),
+        app_id=app_id,
+        signer=creator,
+    )
+
+
+def create_account_map(account: aku.Account, role: str) -> dict[str, str]:
+    return {
+        "type": role,
+        "address": account.address,
+        "private_key": account.private_key,
+    }
+
+
+def create_accounts(
+    brokers: list[str],
+    sellers: list[str],
+    buyers: list[str],
+) -> dict[str, dict[str, str]]:
+    accounts_dict = {}
+    for broker in brokers:
+        account = aku.get_account(aku.get_algod_client(), broker)
+        accounts_dict[broker] = create_account_map(account, "broker")
+
+    for seller in sellers:
+        account = aku.get_account(aku.get_algod_client(), seller)
+        accounts_dict[seller] = create_account_map(account, "seller")
+
+    for buyer in buyers:
+        account = aku.get_account(aku.get_algod_client(), buyer)
+        accounts_dict[buyer] = create_account_map(account, "buyer")
+
+    json = JSONEncoder().encode(accounts_dict)
+    with open("accounts.json", "w") as f:
+        f.write(json)
+    return accounts_dict
 
 
 algod = aku.get_algod_client()
@@ -21,26 +77,25 @@ kmd = aku.get_kmd_client_from_algod_client(algod)
 document_codec = ABIType.from_string(str(EDIDocument().type_spec()))
 
 
-def create_edi_oracle(creator_name: str):
+def create_edi_oracle(creator_name: str) -> tuple[int, str]:
     """Create a new EDI Oracle contract.
     This is a bare app call with the app ID set to 0."""
     creator_account = aku.get_account(algod, creator_name)
-    app_client = utils.create_app_client(0, creator_account)
-    response = app_client.create(call_abi_method=False)
+    app_client = create_app_client(0, creator_account)
+    app_client.create(call_abi_method=False)
 
     app_address = app_client.app_address
     app_id = app_client.app_id
     return (app_id, app_address)
 
 
-def setup_edi_oracle(app_id: int, sender: str, micro_algos: int):
+def setup_edi_oracle(app_id: int, sender: str, micro_algos: int) -> str:
     sender_account = aku.get_account(algod, sender)
-    app_client = utils.create_app_client(app_id, sender_account)
+    app_client = create_app_client(app_id, sender_account)
     app_address = app_client.app_address
     sp = app_client.algod_client.suggested_params()
     sp.flat_fee = True
     sp.fee = 2000
-    amount = micro_algos
     min_balance = edi_oracle_app.state.min_balance.value
     print(min_balance)
     # if amount < min_balance:
@@ -61,6 +116,7 @@ def setup_edi_oracle(app_id: int, sender: str, micro_algos: int):
 
 def add_edi_record(
     app_id: int,
+    oracle_client: aku.ApplicationClient | None,
     sender: str,
     key: str,
     doc_type: int,
@@ -68,15 +124,18 @@ def add_edi_record(
     item_code: str,
     item_qty: int,
     status: int,
-):
-    key_32 = utils.buffer_str_to_fixed(key)
-    print("key_32: {0} with length {1}".format(key_32, len(key_32)))
-    ref_32 = utils.buffer_str_to_fixed(ref)
-    print("ref_32: {0} with length {1}".format(ref_32, len(ref_32)))
-    item_code_32 = utils.buffer_str_to_fixed(item_code)
-    print("item_code_32: {0} with length {1}".format(item_code_32, len(item_code_32)))
+) -> list[str]:
+    key_32 = buffer_str_to_fixed(key)
+    print(f"key_32: {key_32} with length {len(key_32)}")
+    ref_32 = buffer_str_to_fixed(ref)
+    print(f"ref_32: {ref_32} with length {len(ref_32)}")
+    item_code_32 = buffer_str_to_fixed(item_code)
+    print(f"item_code_32: {item_code_32} with length {len(item_code_32)}")
     sender_account = aku.get_account(algod, sender)
-    app_client = utils.create_app_client(app_id, sender_account)
+    if oracle_client is None:
+        app_client = create_app_client(app_id, sender_account)
+    else:
+        app_client = oracle_client
     sp = app_client.algod_client.suggested_params()
 
     composer = atc.AtomicTransactionComposer()
@@ -102,12 +161,14 @@ def add_edi_record(
     return result.tx_ids
 
 
-def get_edi_record(app_id: int, sender: str, key: str):
+def get_edi_record(
+    app_id: int, sender: str, key: str
+) -> tuple[int, str, int, str, int]:
     sender_account = aku.get_account(algod, sender)
-    app_client = utils.create_app_client(app_id, sender_account)
+    app_client = create_app_client(app_id, sender_account)
     sp = app_client.algod_client.suggested_params()
 
-    key_32 = utils.buffer_str_to_fixed(key)
+    key_32 = buffer_str_to_fixed(key)
     composer = atc.AtomicTransactionComposer()
     app_client.add_method_call(
         atc=composer,
@@ -182,12 +243,15 @@ def main():
     # parser.add_argument("string", type=str, help="string to convert to base32")
     # parser.add_argument("string", type=str, help="string to convert to base32")
     args = parser.parse_args()
-    # print(utils.utf8_to_base32(args.string))
-    if args.command == "create":
+    # print(utf8_to_base32(args.string))
+    if args.command == "build":
+        response = edi_oracle.build_contract()
+        print(response)
+    elif args.command == "create":
         response = create_edi_oracle(args.sender)
         print(response)
     elif args.command == "setup":
-        if args.app_id == 0 and args.create == True:
+        if args.app_id == 0 and args.create is True:
             sender = args.sender
             amount = args.amount
             print("compiling TEAL and building contract specification")
@@ -195,11 +259,11 @@ def main():
             print(build_result)
             print("creating EDI Oracle application")
             app_id, address = create_edi_oracle(sender)
-            print("app_id: {0}".format(app_id))
-            print("address: {0}".format(address))
+            print(f"app_id: {app_id}")
+            print(f"address: {address}")
             print("funding and setting up EDI Oracle application")
             setup_result = setup_edi_oracle(app_id, sender, amount)
-            print("Setup Complete: {}".format(setup_result))
+            print(f"Setup Complete: {setup_result}")
         else:
             response = setup_edi_oracle(args.app_id, args.sender, args.amount)
             print(response)
@@ -207,9 +271,7 @@ def main():
         brokers = args.brokers.split(",")
         sellers = args.sellers.split(",")
         buyers = args.buyers.split(",")
-        response = utils.create_accounts(
-            buyers=buyers, sellers=sellers, brokers=brokers
-        )
+        response = create_accounts(buyers=buyers, sellers=sellers, brokers=brokers)
         print(response)
     elif args.command == "add_record":
         response = add_edi_record(
@@ -231,7 +293,7 @@ def main():
             app_id=app_id, sender=sender, key=key
         )
         print(
-            "doc_type: {0}, ref: {1}, status: {2}, item_code: {3}, item_qty: {4}".format(
+            "doc_type: {}, ref: {}, status: {}, item_code: {}, item_qty: {}".format(
                 doc_type,
                 ref,
                 status,

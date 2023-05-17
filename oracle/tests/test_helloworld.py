@@ -6,7 +6,7 @@ from algokit_utils import (
 )
 from algosdk.v2client.algod import AlgodClient
 
-from smart_contracts import helloworld
+from oracle.smart_contracts import helloworld
 
 
 @pytest.fixture(scope="session")

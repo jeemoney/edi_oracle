@@ -39,8 +39,8 @@ suppress-none-returning = true
 pythonpath = ["smart_contracts", "tests"]
 
 [tool.mypy]
-files = "oracle/smart_contracts/"
-python_version = "3.10"
+files = "oracle/smart_contracts"
+python_version = "3.11"
 check_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true

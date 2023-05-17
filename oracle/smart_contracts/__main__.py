@@ -4,9 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from smart_contracts import config
-from smart_contracts.helpers.build import build
-from smart_contracts.helpers.deploy import deploy
+from oracle.smart_contracts import config
+from oracle.smart_contracts.helpers.build import build
+from oracle.smart_contracts.helpers.deploy import deploy
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s %(levelname)-10s: %(message)s"

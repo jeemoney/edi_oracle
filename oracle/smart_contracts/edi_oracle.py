@@ -21,7 +21,7 @@ from pyteal import (
     abi,
 )
 
-from smart_contracts.helpers.deployment_standard import (
+from oracle.smart_contracts.helpers.deployment_standard import (
     deploy_time_immutability_control,
     deploy_time_permanence_control,
 )
@@ -160,8 +160,8 @@ def get_record(key: abi.StaticBytes[L[32]], *, output: EDIDocument) -> Expr:
 
 def build_contract() -> str:
     app = edi_oracle_app.build()
-    app.export("./artifacts")
-    app.export("../edi_service/artifacts")
+    app.export("./oracle/smart_contracts/artifacts")
+    app.export("./edi_service/artifacts")
     return f"Application: {app.contract.name} built"
 
 

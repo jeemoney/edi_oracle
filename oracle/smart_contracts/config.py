@@ -17,7 +17,7 @@ from algosdk.util import algos_to_microalgos
 from algosdk.v2client.algod import AlgodClient
 from algosdk.v2client.indexer import IndexerClient
 
-from smart_contracts import edi_oracle, helloworld
+from oracle.smart_contracts import edi_oracle, helloworld
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,10 @@ def deploy(
     deployer: Account,
 ) -> None:
     is_local = is_localnet(algod_client)
+    print(f"Deploying {app_spec.contract.name}...")
     match app_spec.contract.name:
         case "EDIOracle_v0.0.3":
+            edi_oracle.build_contract()
             app_client = ApplicationClient(
                 algod_client,
                 app_spec,
