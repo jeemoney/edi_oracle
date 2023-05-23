@@ -22,6 +22,10 @@ os.environ[
 ] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 
+class BoxNotFoundError(Exception):
+    key: str
+
+
 def buffer_str_to_fixed(string: str, length: int = 32) -> bytes:
     if len(string) == length:
         return string.encode()
@@ -164,6 +168,7 @@ def add_edi_record(
             suggested_params=sp,
         ),
     )
+
     response = app_client.execute_atc(composer)
     results = response.abi_results
     return bytearray(results[0].return_value).decode()
@@ -189,27 +194,31 @@ def get_edi_record(
             suggested_params=sp,
         ),
     )
-    result = app_client.execute_atc(composer)
-    (
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-    ) = result.abi_results[0].return_value
-    doc_type = int(arg1)
-    ref = bytearray(arg2).decode("utf-8").split("-")[0]
-    status = int(arg3)
-    item_code = bytearray(arg4).decode("utf-8").split("-")[0]
-    item_qty = int(arg5)
+    try:
+        result = app_client.execute_atc(composer)
+        (
+            arg1,
+            arg2,
+            arg3,
+            arg4,
+            arg5,
+        ) = result.abi_results[0].return_value
+        doc_type = int(arg1)
+        ref = bytearray(arg2).decode("utf-8").split("-")[0]
+        status = int(arg3)
+        item_code = bytearray(arg4).decode("utf-8").split("-")[0]
+        item_qty = int(arg5)
 
-    return (
-        doc_type,
-        ref,
-        status,
-        item_code,
-        item_qty,
-    )
+        return (
+            doc_type,
+            ref,
+            status,
+            item_code,
+            item_qty,
+        )
+    except aku.LogicError as e:
+        print(e)
+        raise e
 
 
 def main():

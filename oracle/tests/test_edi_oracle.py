@@ -2,6 +2,7 @@ import pytest
 from algokit_utils import (
     ApplicationClient,
     ApplicationSpecification,
+    LogicError,
     get_localnet_default_account,
 )
 from algosdk.v2client.algod import AlgodClient
@@ -65,3 +66,11 @@ def test_get_edi_record(oracle_client: ApplicationClient) -> None:
         oracle_client=oracle_client, key=str(edi_values[0]) + edi_values[1]
     )
     assert results == edi_values
+
+
+def test_get_record_logic_error_when_key_not_found(
+    oracle_client: ApplicationClient,
+) -> None:
+    fake_edi_record()
+    with pytest.raises(LogicError):
+        get_edi_record(oracle_client=oracle_client, key="bad_key")
