@@ -29,6 +29,20 @@ def buffer_str_to_fixed(string: str, length: int = 32) -> bytes:
     return f"{string}-{buffer}".encode()
 
 
+def convert_buffered_to_str(buffered: list[int]) -> str:
+    return bytearray(buffered).decode().split("-")[0]
+
+
+def decode_edi_record(edi_record: tuple[int, str, int, str, int]) -> tuple:
+    return (
+        edi_record[0],
+        convert_buffered_to_str(edi_record[1]),
+        edi_record[2],
+        convert_buffered_to_str(edi_record[3]),
+        edi_record[4],
+    )
+
+
 def create_app_client(app_id: int, creator: aku.Account) -> aku.ApplicationClient:
     return aku.ApplicationClient(
         aku.get_algod_client(),
@@ -89,9 +103,8 @@ def create_edi_oracle(creator_name: str) -> tuple[int, str]:
     return (app_id, app_address)
 
 
-def setup_edi_oracle(app_id: int, sender: str, micro_algos: int) -> str:
-    sender_account = aku.get_account(algod, sender)
-    app_client = create_app_client(app_id, sender_account)
+def setup_edi_oracle(oracle_client: aku.ApplicationClient, micro_algos: int) -> str:
+    app_client = oracle_client
     app_address = app_client.app_address
     sp = app_client.algod_client.suggested_params()
     sp.flat_fee = True
@@ -101,13 +114,13 @@ def setup_edi_oracle(app_id: int, sender: str, micro_algos: int) -> str:
     # if amount < min_balance:
     #     amount = min_balance
     params = aku.TransferParameters(
-        from_account=sender_account,
+        from_account=app_client.signer,
         to_address=app_address,
         micro_algos=min_balance,
         suggested_params=sp,
     )
     payment = aku.transfer(algod, params)
-    signer = atc.AccountTransactionSigner(sender_account.private_key)
+    signer = app_client.signer
     result = app_client.call(
         edi_oracle.setup, payment_txn=atc.TransactionWithSigner(payment, signer)
     )
@@ -115,27 +128,22 @@ def setup_edi_oracle(app_id: int, sender: str, micro_algos: int) -> str:
 
 
 def add_edi_record(
-    app_id: int,
-    oracle_client: aku.ApplicationClient | None,
-    sender: str,
+    oracle_client: aku.ApplicationClient,
     key: str,
     doc_type: int,
     ref: str,
     item_code: str,
     item_qty: int,
     status: int,
-) -> list[str]:
+) -> str:
     key_32 = buffer_str_to_fixed(key)
     print(f"key_32: {key_32} with length {len(key_32)}")
     ref_32 = buffer_str_to_fixed(ref)
     print(f"ref_32: {ref_32} with length {len(ref_32)}")
     item_code_32 = buffer_str_to_fixed(item_code)
     print(f"item_code_32: {item_code_32} with length {len(item_code_32)}")
-    sender_account = aku.get_account(algod, sender)
-    if oracle_client is None:
-        app_client = create_app_client(app_id, sender_account)
-    else:
-        app_client = oracle_client
+
+    app_client = oracle_client
     sp = app_client.algod_client.suggested_params()
 
     composer = atc.AtomicTransactionComposer()
@@ -156,16 +164,15 @@ def add_edi_record(
             suggested_params=sp,
         ),
     )
-    result = app_client.execute_atc(composer)
-
-    return result.tx_ids
+    response = app_client.execute_atc(composer)
+    results = response.abi_results
+    return bytearray(results[0].return_value).decode()
 
 
 def get_edi_record(
-    app_id: int, sender: str, key: str
+    oracle_client: aku.ApplicationClient, key: str
 ) -> tuple[int, str, int, str, int]:
-    sender_account = aku.get_account(algod, sender)
-    app_client = create_app_client(app_id, sender_account)
+    app_client = oracle_client
     sp = app_client.algod_client.suggested_params()
 
     key_32 = buffer_str_to_fixed(key)
@@ -262,7 +269,9 @@ def main():
             print(f"app_id: {app_id}")
             print(f"address: {address}")
             print("funding and setting up EDI Oracle application")
-            setup_result = setup_edi_oracle(app_id, sender, amount)
+            sender = aku.get_account(algod, sender)
+            oracle_client = create_app_client(app_id, sender)
+            setup_result = setup_edi_oracle(oracle_client, amount)
             print(f"Setup Complete: {setup_result}")
         else:
             response = setup_edi_oracle(args.app_id, args.sender, args.amount)
@@ -274,9 +283,9 @@ def main():
         response = create_accounts(buyers=buyers, sellers=sellers, brokers=brokers)
         print(response)
     elif args.command == "add_record":
+        sender = aku.get_account(algod, args.sender)
         response = add_edi_record(
-            app_id=args.app_id,
-            sender=args.sender,
+            oracle_client=create_app_client(args.app_id, sender),
             key=args.key,
             doc_type=args.doc_type,
             ref=args.ref,

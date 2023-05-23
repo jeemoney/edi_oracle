@@ -127,6 +127,8 @@ def add_record(
     status: abi.Uint8,
     item_code: abi.StaticBytes[L[32]],
     item_qty: abi.Uint64,
+    *,
+    output: abi.StaticBytes[L[32]],
 ) -> Expr:
     return Seq(
         Assert(
@@ -144,6 +146,7 @@ def add_record(
             item_qty,
         ),
         edi_oracle_app.state.edi_records[key.get()].set(edi_record),
+        output.set(key.get()),
     )
 
 
