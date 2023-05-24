@@ -5,7 +5,7 @@ const {
   AtomicTransactionComposer,
   default: algosdk,
 } = require("algosdk");
-const algoKitUtili = require("@algorandfoundation/algokit-utils");
+const algoKitUtils = require("@algorandfoundation/algokit-utils");
 
 // helper functions
 const _bufferStrToFixed = (string, length = 32) => {
@@ -76,7 +76,7 @@ const getOracleParams = (jsonData) => {
     status: null,
   };
 
-  // temporary assigments
+  // temporary assignments
   params.key = jsonData.docType + jsonData.purchNumber;
   params.docType = parseInt(jsonData.docType);
   params.ref = jsonData.purchNumber;
