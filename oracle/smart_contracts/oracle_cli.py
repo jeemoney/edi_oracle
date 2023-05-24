@@ -256,10 +256,8 @@ def main():
     account_group.add_argument(
         "--buyers", type=str, help="comma-separated list of buyers"
     )
-    # parser.add_argument("string", type=str, help="string to convert to base32")
-    # parser.add_argument("string", type=str, help="string to convert to base32")
+
     args = parser.parse_args()
-    # print(utf8_to_base32(args.string))
     if args.command == "build":
         response = edi_oracle.build_contract()
         print(response)
