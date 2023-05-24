@@ -3,6 +3,7 @@ from algokit_utils import (
     ApplicationClient,
     ApplicationSpecification,
     LogicError,
+    get_account,
     get_localnet_default_account,
 )
 from algosdk.v2client.algod import AlgodClient
@@ -57,6 +58,33 @@ def test_add_record(oracle_client: ApplicationClient) -> None:
     # Compare the combined and buffered doc_type
     # and ref values as a string to the returned key
     assert results == buffer_str_to_fixed(str(edi_values[0]) + edi_values[1]).decode()
+
+
+def test_add_record_fails_when_not_creator(
+    algod_client: AlgodClient,
+    oracle_client: ApplicationClient,
+    oracle_app_spec: ApplicationSpecification,
+) -> None:
+    new_account = get_account(client=algod_client, name="Test_Account")
+    client = ApplicationClient(
+        algod_client,
+        app_id=oracle_client.app_id,
+        app_spec=oracle_app_spec,
+        signer=new_account,
+        template_values={"UPDATABLE": 1, "DELETABLE": 1},
+    )
+
+    edi_values = fake_edi_record()
+    with pytest.raises(LogicError):
+        add_edi_record(
+            oracle_client=client,
+            key=str(edi_values[0]) + edi_values[1],
+            doc_type=edi_values[0],
+            ref=edi_values[1],
+            status=edi_values[2],
+            item_code=edi_values[3],
+            item_qty=edi_values[4],
+        )
 
 
 def test_get_edi_record(oracle_client: ApplicationClient) -> None:
